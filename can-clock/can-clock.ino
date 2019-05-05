@@ -22,10 +22,9 @@
 const uint8_t TIMER_STEP = 25;
 const uint8_t SPI_CS_PIN = 10;
 
-int8_t hour, date, month;
-uint8_t second, minute,  dow;
+int8_t hour;
+uint8_t second, minute, date, dow, month;
 uint16_t year;
-uint8_t mdays[] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
 uint8_t i,filtNo;
 
 #if !defined(__AVR_ATmega32U4__) // not Arduino Pro Micro
@@ -361,7 +360,7 @@ void loop() {
           break;
         case 0x466: {  // GPS clock at UTC
             if (!currentSettings.useRTC && (currentSettings.clockMode != CLOCK_HIDE)) {
-              hour = (((rcvBuf[0] & 0xF8) >> 3);
+              hour = ((rcvBuf[0] & 0xF8) >> 3);
               minute = (rcvBuf[1] & 0xFC) >> 2;
               second = (rcvBuf[2] & 0xFC) >> 2;
               date = (rcvBuf[4] & 0xFC) >> 2;
@@ -400,7 +399,7 @@ void loop() {
     
     timeShift(hour, date, month, year); //correct any day/month/year changes needed after changing the hour
     
-    dstCk(hour, date, month, year); // check to see if we must adjust the DST setting
+    dstCk(hour, date, month, year, currentSettings.DST, (CONFIG_START + 9)); // check to see if we must adjust the DST setting
     
     if (currentSettings.clockMode == CLOCK_12) {  //Change to 12 hour display
       AM = (hour < 12);
