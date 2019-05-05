@@ -40,13 +40,13 @@ uint8_t Day_of_Week(const uint16_t yr, const uint8_t m, const uint8_t d)
   return(weekday);
 }
 
-void dstCk(int8_t h, int8_t d, uint8_t m, uint16_t y)
+void dstCk(int8_t h, int8_t d, uint8_t m, uint16_t y, bool dst, uint8_t ptr)
 {
-  uint8_t dstDate[] = {10,8,14,13,12,10,9,8,14,12,11,10,9,14} // DST Mar change date 2019 - 2032, Nov date is -7 of Mar date!
-  if ((m > 3 && m < 11) || (m == 3 && d > dstDate[(y - 2019)]) || (m == 3 && d == dstDate[(y - 2019)] && h >= 2) || (m == 11 && d < (dstDate[(y - 2019)] - 7)) || (m == 11 && d == (dstDate[(y - 2019)] - 7) && h < 2 && currentSettings.DST))
-    EEPROM.update((CONFIG_START + 9), true);
+  uint8_t dstDate[] = {10,8,14,13,12,10,9,8,14,12,11,10,9,14}; // DST Mar change date 2019 - 2032, Nov date is -7 of Mar date!
+  if ((m > 3 && m < 11) || (m == 3 && d > dstDate[(y - 2019)]) || (m == 3 && d == dstDate[(y - 2019)] && h >= 2) || (m == 11 && d < (dstDate[(y - 2019)] - 7)) || (m == 11 && d == (dstDate[(y - 2019)] - 7) && h < 2 && dst))
+    EEPROM.update(ptr, true);
   else
-    EEPROM.update((CONFIG_START + 9), false);
+    EEPROM.update(ptr, false);
   
   return;
 }
