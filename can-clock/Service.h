@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <stdarg.h>
+#include <EEPROM.h>
 
 uint8_t decToBcd(const uint8_t val)
 {
@@ -47,6 +48,41 @@ void dstCk(int8_t &hour, int8_t &date, uint8_t &month, uint16_t &year)
   else
     EEPROM.update((CONFIG_START + 9), false);
   
+  return;
+}
+
+void timeShift(int8_t &hour, uint8_t &date, uint8_t &month, uint16_t &year)
+{
+  uint8_t mdays[] = {0,31,28,31,30,31,30,31,31,30,31,30,31}; //days in month, padded with a zero
+  if (year % 4 == 0)       // need to account for leapyear, good until the year 2100
+    mdays[2] = 29;
+  else
+    mdays[2] = 28;
+  
+  if (hour < 0) {  //tz or DST put us before midnight
+    hour += 24;
+    date--;
+    if (date == 0) {
+      month--;
+      if (month == 0) {
+        month = 12;
+        year--;
+      }
+      date = mdays[month];
+    }
+  }
+  else if (hour > 24) {  //tz put us after midnight
+    hour %= 24;
+    date++;
+    if (date > mdays[month]) {
+      date = 1;
+      month++;
+      if (month == 13) {
+        year++;
+        month = 1;
+      }
+    }
+  }
   return;
 }
 
