@@ -359,46 +359,15 @@ void loop() {
           }
         }
           break;
-        case 0x466: {  // GPS clock
+        case 0x466: {  // GPS clock at UTC
             if (!currentSettings.useRTC && (currentSettings.clockMode != CLOCK_HIDE)) {
-              hour = (((rcvBuf[0] & 0xF8) >> 3) + currentSettings.tz);
+              hour = (((rcvBuf[0] & 0xF8) >> 3);
               minute = (rcvBuf[1] & 0xFC) >> 2;
               second = (rcvBuf[2] & 0xFC) >> 2;
               date = (rcvBuf[4] & 0xFC) >> 2;
               month = (rcvBuf[5] & 0xFC) >> 2;
               year = ((rcvBuf[6] & 0xF0) >> 4) + 2010; //FIXME: not sure if + 2010 is correct & needs tz correction
               gotClock = true;
-              
-              if (year % 4 == 0)       // need to account for leapyear, good until the year 2100
-                mdays[2] = 29;
-              else
-                mdays[2] = 28;
-
-              if (hour < 0) {  //tz put us before midnight
-                hour += 24;
-                date--;
-                if (date == 0) {
-                  month--;
-                  if (month == 0) {
-                    month = 12;
-                    year--;
-                  }
-                  date = mdays[month];
-                }
-              }
-              else if (hour > 24) {  //tz put us after midnight
-                hour %= 24;
-                date++;
-                if (date > mdays[month]) {
-                  date = 1;
-                  month++;
-                  if (month == 13) {
-                    year++;
-                    month = 1;
-                  }
-                }
-              }
-              
             }
         }
           break;
@@ -413,7 +382,7 @@ void loop() {
   if (sendingNow) {
 
     if (currentSettings.useRTC && (currentSettings.clockMode != CLOCK_HIDE)) {
-      DateTime now = rtc.now();
+      DateTime now = rtc.now(); // rtc should be set to UTC
       year = now.year();
       month = now.month();
       date = now.date();
@@ -425,16 +394,14 @@ void loop() {
       gotClock = true;
     }
 
-    dow = Day_of_Week(year, month, date);
+    dow = Day_of_Week(year, month, date); //dow is available from rtc, but not gps
     
-    if (dow == 0 && month == 3 && date >= 8 && hour > 1 && currentSettings.DST == false)  //set DST on for US, +1 after 2nd Sunday of March @ 2 AM
-      EEPROM.update(CONFIG_START + 9, true);
+    hour += (currentSettings.tz + currentSettings.DST); // adjust hour for tz and DST offset
     
-    else if (dow == 0 && month == 11 && hour > 1 && currentSettings.DST == true)  //set DST off for US, +0 after 1st Sunday of November @ 2 AM
-      EEPROM.update(CONFIG_START + 9, false);
+    timeShift(hour, date, month, year); //correct any day/month/year changes needed after changing the hour
     
-    hour += currentSettings.DST;  //Add DST hour if needed
-
+    dstCk(hour, date, month, year); // check to see if we must adjust the DST setting
+    
     if (currentSettings.clockMode == CLOCK_12) {  //Change to 12 hour display
       AM = (hour < 12);
       hour %= 12;
