@@ -39,4 +39,15 @@ uint8_t Day_of_Week(const uint16_t yr, const uint8_t m, const uint8_t d)
   return(weekday);
 }
 
+void dstCk(int8_t &hour, int8_t &date, uint8_t &month, uint16_t &year)
+{
+  uint8_t dstDate[] = {10,8,14,13,12,10,9,8,14,12,11,10,9,14} // DST Mar change date 2019 - 2032, Nov date is -7 of Mar date!
+  if ((month > 3 && month < 11) || (month == 3 && date > dstDate[(year - 2019)]) || (month == 3 && date == dstDate[(year - 2019)] && hour >= 2) || (month == 11 && date < (dstDate[(year - 2019)] - 7)) || (month == 11 && date == (dstDate[(year - 2019)] - 7) && hour < 2 && currentSettings.DST))
+    EEPROM.update((CONFIG_START + 9), true);
+  else
+    EEPROM.update((CONFIG_START + 9), false);
+  
+  return;
+}
+
 #endif // __SERVICE_H_
