@@ -40,10 +40,10 @@ uint8_t Day_of_Week(const uint16_t yr, const uint8_t m, const uint8_t d)
   return(weekday);
 }
 
-void dstCk(int8_t &hour, int8_t &date, uint8_t &month, uint16_t &year)
+void dstCk(int8_t h, int8_t d, uint8_t m, uint16_t y)
 {
   uint8_t dstDate[] = {10,8,14,13,12,10,9,8,14,12,11,10,9,14} // DST Mar change date 2019 - 2032, Nov date is -7 of Mar date!
-  if ((month > 3 && month < 11) || (month == 3 && date > dstDate[(year - 2019)]) || (month == 3 && date == dstDate[(year - 2019)] && hour >= 2) || (month == 11 && date < (dstDate[(year - 2019)] - 7)) || (month == 11 && date == (dstDate[(year - 2019)] - 7) && hour < 2 && currentSettings.DST))
+  if ((m > 3 && m < 11) || (m == 3 && d > dstDate[(y - 2019)]) || (m == 3 && d == dstDate[(y - 2019)] && h >= 2) || (m == 11 && d < (dstDate[(y - 2019)] - 7)) || (m == 11 && d == (dstDate[(y - 2019)] - 7) && h < 2 && currentSettings.DST))
     EEPROM.update((CONFIG_START + 9), true);
   else
     EEPROM.update((CONFIG_START + 9), false);
@@ -51,35 +51,35 @@ void dstCk(int8_t &hour, int8_t &date, uint8_t &month, uint16_t &year)
   return;
 }
 
-void timeShift(int8_t &hour, uint8_t &date, uint8_t &month, uint16_t &year)
+void timeShift(int8_t &h, uint8_t &d, uint8_t &m, uint16_t &y)
 {
   uint8_t mdays[] = {0,31,28,31,30,31,30,31,31,30,31,30,31}; //days in month, padded with a zero
-  if (year % 4 == 0)       // need to account for leapyear, good until the year 2100
+  if (y % 4 == 0)       // need to account for leapyear, good until the year 2100
     mdays[2] = 29;
   else
     mdays[2] = 28;
   
-  if (hour < 0) {  //tz or DST put us before midnight
-    hour += 24;
-    date--;
-    if (date == 0) {
-      month--;
-      if (month == 0) {
-        month = 12;
-        year--;
+  if (h < 0) {  //tz or DST put us before midnight
+    h += 24;
+    d--;
+    if (d == 0) {
+      m--;
+      if (m == 0) {
+        m = 12;
+        y--;
       }
-      date = mdays[month];
+      d = mdays[m];
     }
   }
-  else if (hour > 24) {  //tz put us after midnight
-    hour %= 24;
-    date++;
-    if (date > mdays[month]) {
-      date = 1;
-      month++;
-      if (month == 13) {
-        year++;
-        month = 1;
+  else if (h > 24) {  //tz put us after midnight
+    h %= 24;
+    d++;
+    if (d > mdays[m]) {
+      d = 1;
+      m++;
+      if (m == 13) {
+        y++;
+        m = 1;
       }
     }
   }
