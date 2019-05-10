@@ -408,7 +408,7 @@ void loop() {
           cycle[currentCycle].data[1] = decToBcd(minute);
           cycle[currentCycle].data[2] = decToBcd(date);
           cycle[currentCycle].data[3] = decToBcd(month);
-          cycle[currentCycle].data[4] = decToBcd(year);
+          cycle[currentCycle].data[4] = decToBcd(year - 2000);
           
           if (currentSettings.clockMode == CLOCK_12) {
             cycle[currentCycle].data[5] = (AM ? 0xA0 : 0xC0);
