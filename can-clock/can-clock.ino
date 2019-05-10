@@ -22,8 +22,7 @@
 const uint8_t TIMER_STEP = 25;
 const uint8_t SPI_CS_PIN = 10;
 
-int8_t hour;
-uint8_t second, minute, date, dow, month;
+uint8_t hour, second, minute, date, dow, month;
 uint16_t year;
 uint8_t i,filtNo;
 
@@ -360,12 +359,9 @@ void loop() {
           break;
         case 0x466: {  // GPS clock at UTC
             if (!currentSettings.useRTC && (currentSettings.clockMode != CLOCK_HIDE)) {
-              hour = ((rcvBuf[0] & 0xF8) >> 3);
+              hour = (((rcvBuf[0] & 0xF8) >> 3) + currentSettings.tz + currentSettings.DST) % 24;
               minute = (rcvBuf[1] & 0xFC) >> 2;
               second = (rcvBuf[2] & 0xFC) >> 2;
-              date = (rcvBuf[4] & 0xFC) >> 2;
-              month = (rcvBuf[5] & 0xFC) >> 2;
-              year = ((rcvBuf[6] & 0xF0) >> 4) + 2010; //FIXME: not sure if + 2010 is correct & needs tz correction
               gotClock = true;
             }
         }
@@ -381,7 +377,7 @@ void loop() {
   if (sendingNow) {
 
     if (currentSettings.useRTC && (currentSettings.clockMode != CLOCK_HIDE)) {
-      DateTime now = rtc.now(); // rtc should be set to UTC
+      DateTime now = rtc.now(); // rtc should be set to local time
       year = now.year();
       month = now.month();
       date = now.date();
@@ -392,19 +388,10 @@ void loop() {
       clockMessage = hourString.padZeros(2) + F(":") + minuteString.padZeros(2);
       gotClock = true;
     }
-
-    dow = Day_of_Week(year, month, date); //dow is available from rtc, but not gps
-    
-    hour += (currentSettings.tz + currentSettings.DST); // adjust hour for tz and DST offset
-    
-    timeShift(hour, date, month, year); //correct any day/month/year changes needed after changing the hour
-    
-    dstCk(hour, date, month, year, currentSettings.DST, (CONFIG_START + 9)); // check to see if we must adjust the DST setting
-    
+ 
     if (currentSettings.clockMode == CLOCK_12) {  //Change to 12 hour display
       AM = (hour < 12);
-      hour %= 12;
-      if (hour == 0) hour = 12;
+      (hour % 12 == 0 ? hour = 12 : hour %= 12);
     }
 
     for (uint16_t currentCycle = 0; currentCycle < MSG_COUNT; currentCycle++ ) {
@@ -424,7 +411,7 @@ void loop() {
           cycle[currentCycle].data[4] = decToBcd(year);
           
           if (currentSettings.clockMode == CLOCK_12) {
-            cycle[currentCycle].data[5] = (0xC0 - (32 * AM));
+            cycle[currentCycle].data[5] = (AM ? 0xA0 : 0xC0);
           }
         }
 
