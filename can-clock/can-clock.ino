@@ -237,10 +237,6 @@ void setup() {
     printCurrentSettings();
 #endif
 
-#if defined(MQ135_CONNECTED)
-  pinMode(A4, INPUT);
-#endif
-
 START_INIT:
   if(CAN_OK == CAN.begin(MCP_STDEXT, CAN_125KBPS, MCP_8MHZ)) {
     Serial.println(F("CAN ok!"));
@@ -258,26 +254,26 @@ START_INIT:
 
   CAN.init_Mask(0, CAN_STDID, 0x07FF0000);   // there are 2 mask in mcp2515, you need to set both of them
   CAN.init_Mask(1, CAN_STDID, 0x07FF0000);
-  for (i=0;i<5;i++)
-    CAN.init_Filt(i, CAN_STDID, 0x04230000);   // Speed data
+  for (i=0;i<6;i++)
+    CAN.init_Filt(i, CAN_STDID, 0x04230000);   // set all 6 filters to Speed data
 
-  CAN.init_Filt(filtNo++, CAN_STDID, 0x04230000);   // Speed data
+  CAN.init_Filt(filtNo++, CAN_STDID, 0x04230000);   // set filter 0 to Speed data
 
   if (currentSettings.displayPressure) {
     if (currentSettings.tpmsRequest) {
-      CAN.init_Filt(filtNo++, CAN_STDID, 0x072E0000);    // TPMS response
+      CAN.init_Filt(filtNo++, CAN_STDID, 0x072E0000);    // set filter 1 to TPMS response
     } else {
-      CAN.init_Filt(filtNo++, CAN_STDID, 0x03B50000);   // TPMS broadcast
+      CAN.init_Filt(filtNo++, CAN_STDID, 0x03B50000);   // set filter 1 to TPMS broadcast
     }
   }
 
   if (currentSettings.useRTC) {
     if (!rtc.begin()) {
       currentSettings.useRTC = false;
-      CAN.init_Filt(filtNo++, CAN_STDID, 0x04660000);   // GPS
+      CAN.init_Filt(filtNo++, CAN_STDID, 0x04660000);   // set filter 2 to GPS
     }
   } else {
-    CAN.init_Filt(filtNo++, CAN_STDID, 0x04660000);   // GPS
+    CAN.init_Filt(filtNo++, CAN_STDID, 0x04660000);   // set filter 2 to GPS
   }
 
   CAN.setMode(MCP_NORMAL);
@@ -411,7 +407,7 @@ void loop() {
           cycle[currentCycle].data[4] = decToBcd(year - 2000);
           
           if (currentSettings.clockMode == CLOCK_12) {
-            cycle[currentCycle].data[5] = (AM ? 0xA0 : 0xC0);
+            cycle[currentCycle].data[5] = (AM ? 0xB0 : 0xD0);
           }
         }
 
@@ -455,11 +451,6 @@ void loop() {
         }
     }
 #endif
-
-#if defined(MQ135_CONNECTED)    // For MQ135
-    uint8_t sensorValue = analogRead(4);
-    message = String(sensorValue, DEC);
-#endif // MQ135_CONNECTED
 
     if (message == F("%MTRACK")) message = F(""); // FIXME: to mask Media Utilities variable
 
