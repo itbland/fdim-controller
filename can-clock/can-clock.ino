@@ -387,7 +387,10 @@ void loop() {
  
     if (currentSettings.clockMode == CLOCK_12) {  //Change to 12 hour display
       AM = (hour < 12);
+      ampm = (hour < 12 ? "AM" : "PM");
       (hour % 12 == 0 ? hour = 12 : hour %= 12);
+      hourString = String(hour);
+      clockMessage = hourString.padZeros(2) + F(":") + minuteString.padZeros(2) + F(" ") + ampm;
     }
 
     for (uint16_t currentCycle = 0; currentCycle < MSG_COUNT; currentCycle++ ) {
@@ -402,10 +405,7 @@ void loop() {
                // init functions if stock head unit is used, so no extra checks
           cycle[currentCycle].data[0] = decToBcd(hour);
           cycle[currentCycle].data[1] = decToBcd(minute);
-          cycle[currentCycle].data[2] = decToBcd(date);
-          cycle[currentCycle].data[3] = decToBcd(month);
-          cycle[currentCycle].data[4] = decToBcd(year - 2000);
-          
+                    
           if (currentSettings.clockMode == CLOCK_12) {
             cycle[currentCycle].data[5] = (AM ? 0xB0 : 0xD0);
           }
